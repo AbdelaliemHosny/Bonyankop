@@ -1,5 +1,5 @@
 # Entity Relationship Diagram (ERD)
-## Smart Home Maintenance & Public Infrastructure Platform
+## Bonyanko Platform
 
 ---
 

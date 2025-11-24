@@ -1,4 +1,4 @@
-# Database Design Wiki - Smart Home Maintenance Platform
+# Database Design Wiki - Bonyanko Platform
 
 ## 📋 Table of Contents
 1. [Database Overview](#database-overview)

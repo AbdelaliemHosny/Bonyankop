@@ -1,5 +1,5 @@
 -- =====================================================
--- Smart Home Maintenance Platform - Database Setup Script
+-- Bonyanko Platform - Database Setup Script
 -- PostgreSQL 14+ Compatible
 -- Version: 3.0
 -- Last Updated: November 2025
@@ -12,14 +12,14 @@
 -- Terminate existing connections to the database
 SELECT pg_terminate_backend(pg_stat_activity.pid)
 FROM pg_stat_activity
-WHERE pg_stat_activity.datname = 'smart_home_maintenance'
+WHERE pg_stat_activity.datname = 'bonyanko'
   AND pid <> pg_backend_pid();
 
 -- Drop database if exists (CAUTION: This will delete all data!)
-DROP DATABASE IF EXISTS smart_home_maintenance;
+DROP DATABASE IF EXISTS bonyanko;
 
 -- Create database
-CREATE DATABASE smart_home_maintenance
+CREATE DATABASE bonyanko
     WITH 
     ENCODING = 'UTF8'
     LC_COLLATE = 'en_US.UTF-8'
@@ -28,7 +28,7 @@ CREATE DATABASE smart_home_maintenance
     CONNECTION LIMIT = -1;
 
 -- Connect to the database
-\c smart_home_maintenance
+\c bonyanko
 
 -- =====================================================
 -- EXTENSIONS
@@ -694,7 +694,7 @@ ORDER BY p.created_at DESC;
 
 -- Insert default system settings
 INSERT INTO system_settings (setting_key, setting_value, data_type, category, description, is_public, is_editable) VALUES
-('platform_name', 'Smart Home Maintenance Platform', 'string', 'general', 'Platform display name', TRUE, TRUE),
+('platform_name', 'Bonyanko', 'string', 'general', 'Platform display name', TRUE, TRUE),
 ('ai_model_version', 'v1.0.0', 'string', 'ai', 'Current AI diagnostic model version', FALSE, TRUE),
 ('quote_validity_days', '7', 'number', 'marketplace', 'Default quote validity period in days', TRUE, TRUE),
 ('max_quotes_per_request', '10', 'number', 'marketplace', 'Maximum quotes allowed per service request', TRUE, TRUE),
@@ -711,7 +711,7 @@ DO $$
 BEGIN
     RAISE NOTICE '========================================';
     RAISE NOTICE 'Database setup completed successfully!';
-    RAISE NOTICE 'Database: smart_home_maintenance';
+    RAISE NOTICE 'Database: bonyanko';
     RAISE NOTICE 'Tables created: 10';
     RAISE NOTICE 'Indexes created: Multiple per table';
     RAISE NOTICE 'Triggers created: Auto-update timestamps';
