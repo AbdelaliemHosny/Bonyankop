@@ -28,7 +28,7 @@ public class ServiceRequestController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "CITIZEN")]
+    //[Authorize(Roles = "CITIZEN")]
     public async Task<IActionResult> CreateServiceRequest([FromBody] CreateServiceRequestDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -127,7 +127,7 @@ public class ServiceRequestController : ControllerBase
     }
 
     [HttpGet("my-requests")]
-    [Authorize(Roles = "CITIZEN")]
+    //[Authorize(Roles = "CITIZEN")]
     public async Task<IActionResult> GetMyRequests()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

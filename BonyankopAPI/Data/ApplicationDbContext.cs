@@ -19,6 +19,8 @@ namespace BonyankopAPI.Data
         public DbSet<Quote> Quotes { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<Rating> Ratings { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<SystemSettings> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -178,6 +180,35 @@ namespace BonyankopAPI.Data
                     .WithMany()
                     .HasForeignKey(e => e.ProviderId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure AuditLog entity
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.HasKey(e => e.LogId);
+                entity.Property(e => e.ActionType).HasMaxLength(100);
+                entity.Property(e => e.EntityType).HasMaxLength(100);
+                entity.Property(e => e.IpAddress).HasMaxLength(50);
+                entity.Property(e => e.SessionId).HasMaxLength(100);
+                
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .IsRequired(false);
+                
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.EntityType, e.EntityId });
+                entity.HasIndex(e => e.CreatedAt);
+            });
+
+            // Configure SystemSettings entity
+            modelBuilder.Entity<SystemSettings>(entity =>
+            {
+                entity.HasKey(e => e.SettingId);
+                entity.Property(e => e.DataType).HasConversion<string>();
+                entity.HasIndex(e => e.SettingKey).IsUnique();
+                entity.HasIndex(e => e.Category);
             });
 
             // Rename Identity tables to simpler names (optional)

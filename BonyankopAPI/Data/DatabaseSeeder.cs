@@ -33,6 +33,7 @@ namespace BonyankopAPI.Data
             
             // Seed Projects and Ratings
             await SeedProjectExecutionAsync(context, userManager);
+      
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
@@ -1068,6 +1069,212 @@ namespace BonyankopAPI.Data
                 }
             }
 
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedSystemSettingsAsync(ApplicationDbContext context)
+        {
+            if (await context.SystemSettings.AnyAsync())
+            {
+                return;
+            }
+
+            var settings = new List<SystemSettings>
+            {
+                new SystemSettings
+                {
+                    SettingId = Guid.NewGuid(),
+                    SettingKey = "MaxUploadSizeMB",
+                    SettingValue = "10",
+                    DataType = Models.DataType.NUMBER,
+                    Category = "Application",
+                    Description = "Maximum file upload size in megabytes",
+                    IsPublic = true,
+                    IsEditable = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new SystemSettings
+                {
+                    SettingId = Guid.NewGuid(),
+                    SettingKey = "DefaultLanguage",
+                    SettingValue = "en",
+                    DataType = Models.DataType.STRING,
+                    Category = "Application",
+                    Description = "Default application language",
+                    IsPublic = true,
+                    IsEditable = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new SystemSettings
+                {
+                    SettingId = Guid.NewGuid(),
+                    SettingKey = "MaintenanceMode",
+                    SettingValue = "false",
+                    DataType = Models.DataType.BOOLEAN,
+                    Category = "Application",
+                    Description = "Enable maintenance mode",
+                    IsPublic = true,
+                    IsEditable = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new SystemSettings
+                {
+                    SettingId = Guid.NewGuid(),
+                    SettingKey = "CommissionRate",
+                    SettingValue = "10",
+                    DataType = Models.DataType.NUMBER,
+                    Category = "Payment",
+                    Description = "Platform commission rate in percentage",
+                    IsPublic = false,
+                    IsEditable = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new SystemSettings
+                {
+                    SettingId = Guid.NewGuid(),
+                    SettingKey = "QuoteExpirationDays",
+                    SettingValue = "30",
+                    DataType = Models.DataType.NUMBER,
+                    Category = "Business",
+                    Description = "Number of days before a quote expires",
+                    IsPublic = true,
+                    IsEditable = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }
+            };
+
+            await context.SystemSettings.AddRangeAsync(settings);
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedAuditLogsAsync(ApplicationDbContext context, UserManager<User> userManager)
+        {
+            if (await context.AuditLogs.AnyAsync())
+            {
+                return;
+            }
+
+            var users = await userManager.Users.ToListAsync();
+            var adminUser = users.FirstOrDefault(u => u.UserName == "admin@bonyankop.com");
+            var citizenUser = users.FirstOrDefault(u => u.UserName == "citizen@example.com");
+            var engineerUser = users.FirstOrDefault(u => u.UserName == "engineer1@example.com");
+            
+            var faker = new Faker();
+            var auditLogs = new List<AuditLog>();
+
+            if (citizenUser != null)
+            {
+                auditLogs.Add(new AuditLog
+                {
+                    LogId = Guid.NewGuid(),
+                    UserId = citizenUser.Id,
+                    ActionType = "USER_REGISTRATION",
+                    EntityType = "User",
+                    EntityId = citizenUser.Id,
+                    ActionDescription = "New user registered as CITIZEN",
+                    NewValuesJson = $"{{\"Email\":\"{citizenUser.Email}\",\"Role\":\"CITIZEN\"}}",
+                    IpAddress = faker.Internet.Ip(),
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    RequestUrl = "/api/auth/register",
+                    ResponseStatus = 201,
+                    ExecutionTimeMs = faker.Random.Int(50, 200),
+                    SessionId = Guid.NewGuid().ToString(),
+                    CreatedAt = DateTime.UtcNow.AddDays(-30)
+                });
+            }
+
+            if (engineerUser != null)
+            {
+                auditLogs.Add(new AuditLog
+                {
+                    LogId = Guid.NewGuid(),
+                    UserId = engineerUser.Id,
+                    ActionType = "USER_LOGIN",
+                    EntityType = "Auth",
+                    EntityId = engineerUser.Id,
+                    ActionDescription = "User logged in successfully",
+                    IpAddress = faker.Internet.Ip(),
+                    UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X)",
+                    RequestUrl = "/api/auth/login",
+                    ResponseStatus = 200,
+                    ExecutionTimeMs = faker.Random.Int(100, 300),
+                    SessionId = Guid.NewGuid().ToString(),
+                    CreatedAt = DateTime.UtcNow.AddDays(-15)
+                });
+            }
+
+            var serviceRequest = await context.ServiceRequests.FirstOrDefaultAsync();
+            if (serviceRequest != null && citizenUser != null)
+            {
+                auditLogs.Add(new AuditLog
+                {
+                    LogId = Guid.NewGuid(),
+                    UserId = citizenUser.Id,
+                    ActionType = "CREATE",
+                    EntityType = "ServiceRequest",
+                    EntityId = serviceRequest.RequestId,
+                    ActionDescription = "Created new service request",
+                    NewValuesJson = $"{{\"ProblemCategory\":\"{serviceRequest.ProblemCategory}\",\"ProblemTitle\":\"{serviceRequest.ProblemTitle}\"}}",
+                    IpAddress = faker.Internet.Ip(),
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0",
+                    RequestUrl = "/api/servicerequests",
+                    ResponseStatus = 201,
+                    ExecutionTimeMs = faker.Random.Int(150, 400),
+                    SessionId = Guid.NewGuid().ToString(),
+                    CreatedAt = serviceRequest.CreatedAt
+                });
+            }
+
+            var quote = await context.Quotes.FirstOrDefaultAsync();
+            if (quote != null && engineerUser != null)
+            {
+                auditLogs.Add(new AuditLog
+                {
+                    LogId = Guid.NewGuid(),
+                    UserId = engineerUser.Id,
+                    ActionType = "CREATE",
+                    EntityType = "Quote",
+                    EntityId = quote.QuoteId,
+                    ActionDescription = "Submitted quote for service request",
+                    NewValuesJson = $"{{\"EstimatedCost\":{quote.EstimatedCost},\"EstimatedDurationDays\":{quote.EstimatedDurationDays}}}",
+                    IpAddress = faker.Internet.Ip(),
+                    UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/14.1",
+                    RequestUrl = "/api/quotes",
+                    ResponseStatus = 201,
+                    ExecutionTimeMs = faker.Random.Int(200, 500),
+                    SessionId = Guid.NewGuid().ToString(),
+                    CreatedAt = quote.SubmittedAt
+                });
+            }
+
+            if (adminUser != null)
+            {
+                auditLogs.Add(new AuditLog
+                {
+                    LogId = Guid.NewGuid(),
+                    UserId = adminUser.Id,
+                    ActionType = "UPDATE",
+                    EntityType = "SystemSettings",
+                    EntityId = Guid.NewGuid(),
+                    ActionDescription = "Updated system setting",
+                    OldValuesJson = "{\"SettingKey\":\"MaxUploadSizeMB\",\"SettingValue\":\"5\"}",
+                    NewValuesJson = "{\"SettingKey\":\"MaxUploadSizeMB\",\"SettingValue\":\"10\"}",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/91.0",
+                    RequestUrl = "/api/systemsettings/MaxUploadSizeMB",
+                    ResponseStatus = 200,
+                    ExecutionTimeMs = faker.Random.Int(50, 150),
+                    SessionId = Guid.NewGuid().ToString(),
+                    CreatedAt = DateTime.UtcNow.AddDays(-10)
+                });
+            }
+
+            await context.AuditLogs.AddRangeAsync(auditLogs);
             await context.SaveChangesAsync();
         }
     }
